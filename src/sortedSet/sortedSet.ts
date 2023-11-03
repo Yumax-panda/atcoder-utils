@@ -10,7 +10,6 @@ type SortedSetProps<T> = {
 export class SortedSet<T> {
   private _array: T[][]
   private _comparator: (a: T, b: T) => number
-  private _bucketRatio: number
   private _splitRatio: number
   private _size: number
 
@@ -27,7 +26,6 @@ export class SortedSet<T> {
     const _comparator = comparator ?? ((a: any, b: any) => a - b)
 
     this._size = n
-    this._bucketRatio = _bucketRatio
     this._splitRatio = _splitRatio
     this._comparator = _comparator
 
