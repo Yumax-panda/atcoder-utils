@@ -2,14 +2,14 @@ import { bisectRight, bisectLeft } from '../bisect'
 
 type SortedSetProps<T> = {
   array?: T[]
-  comparator?: (a: T, b: T) => any
+  comparator?: (a: T, b: T) => number
   bucketRatio?: number
   splitRatio?: number
 }
 
 export class SortedSet<T> {
   private _array: T[][]
-  private _comparator: (a: T, b: T) => any
+  private _comparator: (a: T, b: T) => number
   private _bucketRatio: number
   private _splitRatio: number
   private _size: number
@@ -107,6 +107,100 @@ export class SortedSet<T> {
     return true
   }
 
+  discard(value: T): boolean {
+    if (this.size === 0) return false
+    const [array, b, i] = this.position(value)
+    if (i === array.length || this._comparator(array[i], value) !== 0)
+      return false
+    this.pop(array, b, i)
+    return true
+  }
+
+  getLt(value: T): T | undefined {
+    const comparator = this._comparator
+    for (let i = this._array.length - 1; i >= 0; i--) {
+      const array = this._array[i]
+      if (array.length && comparator(array[0], value) < 0)
+        return array[bisectLeft({ array, value, comparator }) - 1]
+    }
+  }
+
+  getLe(value: T): T | undefined {
+    const comparator = this._comparator
+    for (let i = this._array.length - 1; i >= 0; i--) {
+      const array = this._array[i]
+      if (array.length && comparator(array[0], value) <= 0)
+        return array[bisectRight({ array, value, comparator }) - 1]
+    }
+  }
+
+  getGt(value: T): T | undefined {
+    const comparator = this._comparator
+    for (let i = 0; i < this._array.length; i++) {
+      const array = this._array[i]
+      if (comparator(array[array.length - 1], value) > 0)
+        return array[bisectRight({ array, value, comparator })]
+    }
+  }
+
+  getGe(value: T): T | undefined {
+    const comparator = this._comparator
+    for (let i = 0; i < this._array.length; i++) {
+      const array = this._array[i]
+      if (comparator(array[array.length - 1], value) >= 0)
+        return array[bisectLeft({ array, value, comparator })]
+    }
+  }
+
+  getItem(index: number): T {
+    let _idx = index
+    if (index < 0) {
+      for (let i = this._array.length - 1; i >= 0; i--) {
+        const array = this._array[i]
+        _idx += array.length
+        if (_idx >= 0) return array[_idx]
+      }
+    } else {
+      for (let i = 0; i < this._array.length; i++) {
+        const array = this._array[i]
+        if (_idx < array.length) return array[_idx]
+        index -= array.length
+      }
+    }
+    throw new Error('index out of range')
+  }
+
+  index(value: T): number {
+    let _idx = 0
+    const comparator = this._comparator
+    for (let i = 0; i < this._array.length; i++) {
+      const array = this._array[i]
+      if (comparator(array[array.length - 1], value) >= 0)
+        return _idx + bisectLeft({ array, value, comparator })
+      _idx += array.length
+    }
+    return _idx
+  }
+
+  indexRight(value: T): number {
+    const comparator = this._comparator
+    let _idx = 0
+    for (let i = 0; i < this._array.length; i++) {
+      const array = this._array[i]
+      if (comparator(array[array.length - 1], value) > 0)
+        return _idx + bisectRight({ array, value, comparator })
+      _idx += array.length
+    }
+    return _idx
+  }
+
+  private pop(array: T[], b: number, i: number): T {
+    const ans = array.splice(i, 1)[0]
+    this._size--
+    if (!array.length) delete this._array[b]
+    return ans
+  }
+
   private position(value: T): [T[], number, number] {
     const comparator = this._comparator
     for (let i = 0; i < this._array.length; i++) {
@@ -117,5 +211,25 @@ export class SortedSet<T> {
       }
     }
     return [this._array[this._array.length - 1], this._array.length - 1, 0]
+  }
+
+  get count() {
+    return new Counter(this)
+  }
+}
+
+class Counter<T> {
+  private data: SortedSet<T>
+
+  constructor(data: SortedSet<T>) {
+    this.data = data
+  }
+
+  lt(value: T): number {
+    return this.data.index(value)
+  }
+
+  le(value: T): number {
+    return this.data.indexRight(value)
   }
 }
