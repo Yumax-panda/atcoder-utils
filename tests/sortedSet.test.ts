@@ -52,3 +52,25 @@ test('sortedSet.discard', () => {
   expect(s.getItem(0)).toBe(1)
   expect(s.getItem(-1)).toBe(10)
 })
+
+test('sortedSet.count.le', () => {
+  const s = new SortedSet<number>({
+    array: [5, 3, 1, 10],
+  })
+  expect(s.count.le(3)).toBe(2)
+  expect(s.count.le(4)).toBe(2)
+  expect(s.count.le(0)).toBe(0)
+  expect(s.count.le(10)).toBe(4)
+  expect(s.count.le(11)).toBe(4)
+})
+
+test('sortedSet.count.lt', () => {
+  const s = new SortedSet<number>({
+    array: [5, 3, 1, 10],
+  })
+  expect(s.count.lt(3)).toBe(1)
+  expect(s.count.lt(4)).toBe(2)
+  expect(s.count.lt(0)).toBe(0)
+  expect(s.count.lt(10)).toBe(3)
+  expect(s.count.lt(11)).toBe(4)
+})
