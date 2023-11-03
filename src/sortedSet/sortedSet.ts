@@ -60,4 +60,8 @@ export class SortedSet<T> {
       return _array.slice(start, end)
     })
   }
+
+  [Symbol.iterator]() {
+    return this._array.flatMap((bucket) => bucket)[Symbol.iterator]()
+  }
 }
