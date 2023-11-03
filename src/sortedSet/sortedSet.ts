@@ -71,6 +71,10 @@ export class SortedSet<T> {
     return this._array.flatMap((bucket) => bucket)
   }
 
+  get buckets() {
+    return this._array
+  }
+
   equals(other: any) {
     return (
       other instanceof SortedSet &&
