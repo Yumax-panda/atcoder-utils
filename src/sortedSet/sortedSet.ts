@@ -64,4 +64,58 @@ export class SortedSet<T> {
   [Symbol.iterator]() {
     return this._array.flatMap((bucket) => bucket)[Symbol.iterator]()
   }
+
+  get size() {
+    return this._size
+  }
+
+  get array() {
+    return this._array.flatMap((bucket) => bucket)
+  }
+
+  equals(other: any) {
+    return (
+      other instanceof SortedSet &&
+      this.size === other.size &&
+      this.array.every((value, index) => value === other.array[index])
+    )
+  }
+
+  has(value: T) {
+    if (this.size === 0) return false
+    const [array, _, i] = this.position(value)
+    return i != array.length && this._comparator(array[i], value) === 0
+  }
+
+  add(value: T): boolean {
+    if (this.size === 0) {
+      this._array = [[value]]
+      this._size = 1
+      return true
+    }
+    const [array, b, i] = this.position(value)
+    if (i != array.length && this._comparator(array[i], value) === 0)
+      return false
+    array.splice(i, 0, value)
+    this._size++
+    if (array.length > this.array.length * this._splitRatio) {
+      const mid = array.length >>> 1
+      const left = array.slice(0, mid)
+      const right = array.slice(mid)
+      this._array.splice(b, 1, left, right)
+    }
+    return true
+  }
+
+  private position(value: T): [T[], number, number] {
+    const comparator = this._comparator
+    for (let i = 0; i < this._array.length; i++) {
+      const array = this._array[i]
+      const length = array.length
+      if (comparator(value, array[length - 1]) <= 0) {
+        return [array, i, bisectLeft({ array, value })]
+      }
+    }
+    return [this._array[this._array.length - 1], this._array.length - 1, 0]
+  }
 }
